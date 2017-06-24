@@ -255,7 +255,7 @@ describe("ArrayField", () => {
 
     });
 
-    it("should handle cleared field values in the array", () => {
+    it("should handle cleared field values in the array", (done) => {
       const schema = {
         type: "array",
         items: {type: "integer"},
@@ -271,8 +271,11 @@ describe("ArrayField", () => {
         target: {value: ""}
       });
 
-      expect(comp.state.formData).eql([1, null, 3]);
-      expect(comp.state.errors).to.have.length.of(1);
+      setTimeout(() => {
+        expect(comp.state.formData).eql([1, null, 3]);
+        expect(comp.state.errors).to.have.length.of(1);
+        done();
+      });
     });
 
     it("should render the input widgets with the expected ids", () => {
