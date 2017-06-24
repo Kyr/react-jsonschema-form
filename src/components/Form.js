@@ -52,16 +52,9 @@ export default class Form extends Component {
     const schema = "schema" in props ? props.schema : this.props.schema;
     const uiSchema = "uiSchema" in props ? props.uiSchema : this.props.uiSchema;
     const edit = typeof props.formData !== "undefined";
-    const liveValidate = props.liveValidate || this.props.liveValidate;
-    const mustValidate = edit && !props.noValidate && liveValidate;
     const { definitions } = schema;
     const formData = getDefaultFormState(schema, props.formData, definitions);
-    const { errors, errorSchema } = mustValidate
-      ? this.validate(formData, schema)
-      : {
-          errors: state.errors || [],
-          errorSchema: state.errorSchema || {},
-        };
+    const { errors = [], errorSchema = {} } = state;
     const idSchema = toIdSchema(
       schema,
       uiSchema["ui:rootFieldId"],

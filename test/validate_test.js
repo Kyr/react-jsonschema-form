@@ -490,7 +490,7 @@ describe("Validation", () => {
       });
     });
 
-    describe("Custom ErrorList", () => {
+    describe("Custom ErrorList", done => {
       const schema = {
         type: "string",
         required: true,
@@ -509,10 +509,16 @@ describe("Validation", () => {
           formData,
           ErrorList: CustomErrorList,
         });
-        expect(node.querySelectorAll(".CustomErrorList")).to.have.length.of(1);
-        expect(node.querySelector(".CustomErrorList").textContent).eql(
-          "1 custom"
-        );
+
+        setTimeout(() => {
+          expect(node.querySelectorAll(".CustomErrorList")).to.have.length.of(
+            1
+          );
+          expect(node.querySelector(".CustomErrorList").textContent).eql(
+            "1 custom"
+          );
+          done();
+        });
       });
     });
   });
