@@ -52,15 +52,13 @@ const widgetMap = {
   },
 };
 
-const defaultRegistry = {
-  fields: require("./components/fields").default,
-  widgets: require("./components/widgets").default,
-  definitions: {},
-  formContext: {},
-};
-
 export function getDefaultRegistry() {
-  return defaultRegistry;
+  return {
+    fields: require("./components/fields").default,
+    widgets: require("./components/widgets").default,
+    definitions: {},
+    formContext: {},
+  };
 }
 
 export function getWidget(schema, widget, registeredWidgets = {}) {
@@ -129,7 +127,7 @@ function computeDefaults(schema, parentDefaults, definitions = {}) {
   switch (schema.type) {
     // We need to recur for object schema inner default values.
     case "object":
-      return Object.keys(schema.properties).reduce((acc, key) => {
+      return Object.keys(schema.properties || {}).reduce((acc, key) => {
         // Compute the defaults for this node, with the parent defaults we might
         // have from a previous run: defaults[key].
         acc[key] = computeDefaults(
@@ -279,15 +277,53 @@ export function orderProperties(properties, order) {
   return complete;
 }
 
-export function isMultiSelect(schema) {
-  return Array.isArray(schema.items.enum) && schema.uniqueItems;
+/**
+ * This function checks if the given schema matches a single
+ * constant value.
+ */
+export function isConstant(schema) {
+  return (
+    (Array.isArray(schema.enum) && schema.enum.length === 1) ||
+    schema.hasOwnProperty("const")
+  );
 }
 
-export function isFilesArray(schema, uiSchema) {
-  return (
-    (schema.items.type === "string" && schema.items.format === "data-url") ||
-    uiSchema["ui:widget"] === "files"
-  );
+export function toConstant(schema) {
+  if (Array.isArray(schema.enum) && schema.enum.length === 1) {
+    return schema.enum[0];
+  } else if (schema.hasOwnProperty("const")) {
+    return schema.const;
+  } else {
+    throw new Error("schema cannot be inferred as a constant");
+  }
+}
+
+export function isSelect(_schema, definitions = {}) {
+  const schema = retrieveSchema(_schema, definitions);
+  const altSchemas = schema.oneOf || schema.anyOf;
+  if (Array.isArray(schema.enum)) {
+    return true;
+  } else if (Array.isArray(altSchemas)) {
+    return altSchemas.every(altSchemas => isConstant(altSchemas));
+  }
+  return false;
+}
+
+export function isMultiSelect(schema, definitions = {}) {
+  if (!schema.uniqueItems || !schema.items) {
+    return false;
+  }
+  return isSelect(schema.items, definitions);
+}
+
+export function isFilesArray(schema, uiSchema, definitions = {}) {
+  if (uiSchema["ui:widget"] === "files") {
+    return true;
+  } else if (schema.items) {
+    const itemsSchema = retrieveSchema(schema.items, definitions);
+    return itemsSchema.type === "string" && itemsSchema.format === "data-url";
+  }
+  return false;
 }
 
 export function isFixedItems(schema) {
@@ -306,18 +342,39 @@ export function allowAdditionalItems(schema) {
 }
 
 export function optionsList(schema) {
-  return schema.enum.map((value, i) => {
-    const label = (schema.enumNames && schema.enumNames[i]) || String(value);
-    return { label, value };
-  });
+  if (schema.enum) {
+    return schema.enum.map((value, i) => {
+      const label = (schema.enumNames && schema.enumNames[i]) || String(value);
+      return { label, value };
+    });
+  } else {
+    const altSchemas = schema.oneOf || schema.anyOf;
+    return altSchemas.map((schema, i) => {
+      const value = toConstant(schema);
+      const label = schema.title || String(value);
+      return { label, value };
+    });
+  }
 }
 
 function findSchemaDefinition($ref, definitions = {}) {
   // Extract and use the referenced definition if we have it.
-  const match = /#\/definitions\/(.*)$/.exec($ref);
-  if (match && match[1] && definitions.hasOwnProperty(match[1])) {
-    return definitions[match[1]];
+  const match = /^#\/definitions\/(.*)$/.exec($ref);
+  if (match && match[1]) {
+    const parts = match[1].split("/");
+    let current = definitions;
+    for (let part of parts) {
+      part = part.replace(/~1/g, "/").replace(/~0/g, "~");
+      if (current.hasOwnProperty(part)) {
+        current = current[part];
+      } else {
+        // No matching definition found, that's an error (bogus schema?)
+        throw new Error(`Could not find a definition for ${$ref}.`);
+      }
+    }
+    return current;
   }
+
   // No matching definition found, that's an error (bogus schema?)
   throw new Error(`Could not find a definition for ${$ref}.`);
 }

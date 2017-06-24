@@ -406,6 +406,65 @@ describe("Validation", () => {
         const schema = {
           type: "array",
           items: {
+            type: "object",
+            properties: {
+              pass1: { type: "string" },
+              pass2: { type: "string" },
+            },
+          },
+        };
+
+        const formData = [
+          { pass1: "a", pass2: "b" },
+          { pass1: "a", pass2: "a" },
+        ];
+
+        function validate(formData, errors) {
+          formData.forEach(({ pass1, pass2 }, i) => {
+            if (pass1 !== pass2) {
+              errors[i].pass2.addError("Passwords don't match");
+            }
+          });
+          return errors;
+        }
+
+        const { comp } = createFormComponent({
+          schema,
+          validate,
+          liveValidate: true,
+        });
+        comp.componentWillReceiveProps({ formData });
+
+        setTimeout(() => {
+          expect(comp.state.errorSchema).eql({
+            0: {
+              pass1: {
+                __errors: [],
+              },
+              pass2: {
+                __errors: ["Passwords don't match"],
+              },
+              __errors: [],
+            },
+            1: {
+              pass1: {
+                __errors: [],
+              },
+              pass2: {
+                __errors: [],
+              },
+              __errors: [],
+            },
+            __errors: [],
+          });
+          done();
+        });
+      });
+
+      it("should validate a simple array", done => {
+        const schema = {
+          type: "array",
+          items: {
             type: "string",
           },
         };
@@ -428,6 +487,9 @@ describe("Validation", () => {
 
         setTimeout(() => {
           expect(comp.state.errorSchema).eql({
+            0: { __errors: [] },
+            1: { __errors: [] },
+            2: { __errors: [] },
             __errors: ["Forbidden value: bbb"],
           });
           done();

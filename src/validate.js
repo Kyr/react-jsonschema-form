@@ -87,6 +87,14 @@ function createErrorHandler(formData, path = ["instance"], __root = []) {
       };
     }, handler);
   }
+  if (Array.isArray(formData)) {
+    return formData.reduce((acc, value, key) => {
+      return {
+        ...acc,
+        [key]: createErrorHandler(value, path.concat([key]), __root),
+      };
+    }, handler);
+  }
   return handler;
 }
 

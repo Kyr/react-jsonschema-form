@@ -1,4 +1,5 @@
-import React, { Component, PropTypes } from "react";
+import React, { Component } from "react";
+import PropTypes from "prop-types";
 
 import { default as DefaultErrorList } from "./ErrorList";
 import {
@@ -107,6 +108,7 @@ export default class Form extends Component {
   renderErrors() {
     const { status, errors } = this.state;
     const { ErrorList, showErrorList } = this.props;
+
     if (status !== "editing" && errors.length && showErrorList != false) {
       return <ErrorList errors={errors} />;
     }

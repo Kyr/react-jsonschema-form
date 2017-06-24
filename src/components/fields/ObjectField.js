@@ -1,4 +1,5 @@
-import React, { Component, PropTypes } from "react";
+import React, { Component } from "react";
+import PropTypes from "prop-types";
 
 import {
   orderProperties,
@@ -12,7 +13,6 @@ class ObjectField extends Component {
     formData: {},
     errorSchema: {},
     idSchema: {},
-    registry: getDefaultRegistry(),
     required: false,
     disabled: false,
     readonly: false,
@@ -43,8 +43,9 @@ class ObjectField extends Component {
       disabled,
       readonly,
       onBlur,
+      registry = getDefaultRegistry(),
     } = this.props;
-    const { definitions, fields, formContext } = this.props.registry;
+    const { definitions, fields, formContext } = registry;
     const { SchemaField, TitleField, DescriptionField } = fields;
     const schema = retrieveSchema(this.props.schema, definitions);
     const title = schema.title === undefined ? name : schema.title;
@@ -91,7 +92,7 @@ class ObjectField extends Component {
               formData={formData[name]}
               onChange={this.onPropertyChange(name)}
               onBlur={onBlur}
-              registry={this.props.registry}
+              registry={registry}
               disabled={disabled}
               readonly={readonly}
             />
