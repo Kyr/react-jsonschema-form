@@ -85,19 +85,42 @@ function createErrorHandler(formData, path=["instance"], __root=[]) {
   return handler;
 }
 
+function unwrapErrorHandler(errorHandler) {
+  return Object.keys(errorHandler).reduce((acc, key) => {
+    if (key === "addError") {
+      return acc;
+    } else if (key === "__errors") {
+      return {...acc, [key]: errorHandler[key]};
+    }
+    return {...acc, [key]: unwrapErrorHandler(errorHandler[key])};
+  }, {});
+}
+
 /**
  * This function processes the formData with a user `validate` contributed
  * function, which receives the form data and an `errorHandler` object that
  * will be used to add custom validation errors for each field.
  */
-export default function validateFormData(formData, schema, customValidate=() => ({__root: []})) {
-  const {errors} = jsonValidate(formData, schema, {throwError: false});
+export default function validateFormData(formData, schema, customValidate, transformErrors) {
+  let {errors} = jsonValidate(formData, schema);
+  if (typeof transformErrors === "function") {
+    errors = transformErrors(errors);
+  }
+  const errorSchema = toErrorSchema(errors);
 
-  return Promise
-    .resolve(customValidate(formData, createErrorHandler(formData)))
-    .then((errorHandler) => errorHandler.__root)
-    .then((customValidationErrors) => errors.concat(customValidationErrors))
-    .then((errors) => ({errors, errorSchema: toErrorSchema(errors)}));
+  if (typeof customValidate !== "function") {
+    return {errors, errorSchema};
+  }
 
+  return Promise.resolve(customValidate(formData, createErrorHandler(formData)))
+  	.then((errorHandler) => {
+      const userErrorSchema = unwrapErrorHandler(errorHandler);
+      const newErrorSchema = mergeObjects(errorSchema, userErrorSchema, true);
+      // XXX: The errors list produced is not fully compliant with the format
+      // exposed by the jsonschema lib, which contains full field paths and other
+      // properties.
+      const newErrors = toErrorList(newErrorSchema);
+
+      return {errors: newErrors, errorSchema: newErrorSchema};
+  	});
 }
-

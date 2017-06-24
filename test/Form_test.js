@@ -322,6 +322,36 @@ describe("Form", () => {
         .eql("hello");
     });
 
+    it("should recursively handle referenced definitions", () => {
+      const schema = {
+        $ref: "#/definitions/node",
+        definitions: {
+          node: {
+            type: "object",
+            properties: {
+              name: {type: "string"},
+              children: {
+                type: "array",
+                items: {
+                  $ref: "#/definitions/node"
+                }
+              }
+            }
+          }
+        }
+      };
+
+      const {node} = createFormComponent({schema});
+
+      expect(node.querySelector("#root_children_0_name"))
+        .to.not.exist;
+
+      Simulate.click(node.querySelector(".array-item-add button"));
+
+      expect(node.querySelector("#root_children_0_name"))
+        .to.exist;
+    });
+
     it("should priorize definition over schema type property", () => {
       // Refs bug #140
       const schema = {
@@ -390,7 +420,7 @@ describe("Form", () => {
       const {node} = createFormComponent({schema});
 
       expect(node.querySelectorAll("option"))
-        .to.have.length.of(2);
+        .to.have.length.of(3);
     });
   });
 
@@ -520,6 +550,30 @@ describe("Form", () => {
         });
         done();
       });
+    });
+  });
+  describe("Blur handler", () => {
+    it("should call provided blur handler on form input blur event", () => {
+      const schema = {
+        type: "object",
+        properties: {
+          foo: {
+            type: "string",
+          },
+        }
+      };
+      const formData = {
+        foo: ""
+      };
+      const onBlur = sandbox.spy();
+      const {node} = createFormComponent({schema, formData, onBlur});
+
+      const input = node.querySelector("[type=text]");
+      Simulate.blur(input, {
+        target: {value: "new"}
+      });
+
+      sinon.assert.calledWithMatch(onBlur, input.id, "new");
     });
   });
 
@@ -1227,7 +1281,8 @@ describe("Form", () => {
       action: "/users/list",
       autocomplete: "off",
       enctype: "multipart/form-data",
-      acceptcharset: "ISO-8859-1"
+      acceptcharset: "ISO-8859-1",
+      noHtml5Validate: true
     };
 
     let node;
@@ -1270,6 +1325,10 @@ describe("Form", () => {
 
     it("should set attr acceptcharset of form", () => {
       expect(node.getAttribute("accept-charset")).eql(formProps.acceptcharset);
+    });
+
+    it("should set attr novalidate of form", () => {
+      expect(node.getAttribute("novalidate")).not.to.be.null;
     });
   });
 });
