@@ -1,7 +1,7 @@
 import toPath from "lodash.topath";
 import {validate as jsonValidate} from "jsonschema";
 
-import {isObject} from "./utils";
+import {isObject, mergeObjects} from "./utils";
 
 function toErrorSchema(errors) {
   // Transforms a jsonschema validation errors list:
@@ -87,7 +87,7 @@ function createErrorHandler(formData, path=["instance"], __root=[]) {
 
 function unwrapErrorHandler(errorHandler) {
   return Object.keys(errorHandler).reduce((acc, key) => {
-    if (key === "addError") {
+    if (key === "addError" || key === "__root") {
       return acc;
     } else if (key === "__errors") {
       return {...acc, [key]: errorHandler[key]};
@@ -109,7 +109,10 @@ export default function validateFormData(formData, schema, customValidate, trans
   const errorSchema = toErrorSchema(errors);
 
   if (typeof customValidate !== "function") {
-    return {errors, errorSchema};
+    return Promise.resolve({
+      errors,
+      errorSchema
+    });
   }
 
   return Promise.resolve(customValidate(formData, createErrorHandler(formData)))

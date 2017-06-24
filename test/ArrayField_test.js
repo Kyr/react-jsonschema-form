@@ -223,13 +223,12 @@ describe("ArrayField", () => {
       })
         .then((node) => {
           return new Promise((resolve) => {
+            expect(node.querySelectorAll(".has-error .error-detail"))
+              .to.have.length.of(1);
+
+            const dropBtns = node.querySelectorAll(".array-item-remove");
+            Simulate.click(dropBtns[0]);
             setTimeout(() => {
-              expect(node.querySelectorAll(".has-error .error-detail"))
-                .to.have.length.of(1);
-
-              const dropBtns = node.querySelectorAll(".array-item-remove");
-              Simulate.click(dropBtns[0]);
-
               resolve(node);
             }, 100);
           });

@@ -65,7 +65,7 @@ describe("Validation", () => {
       it("should return an error list", () => {
         return result.then(({errors}) => {
           expect(errors).to.have.length.of(1);
-          expect(errors[0].stack).eql("instance.pass2: passwords don't match.");
+          expect(errors[0].stack).eql("pass2: passwords don't match.");
         });
       });
 
@@ -112,16 +112,17 @@ describe("Validation", () => {
         ];
       };
 
-      let errors;
+      let result;
 
       beforeEach(() => {
-        const result = validateFormData({foo: 42, [illFormedKey]: 41}, schema, undefined, transformErrors);
-        errors = result.errors;
+        result = validateFormData({foo: 42, [illFormedKey]: 41}, schema, undefined, transformErrors);
       });
 
       it("should use transformErrors function", () => {
-        expect(errors).not.to.be.empty;
-        expect(errors[0].message).to.equal(newErrorMessage);
+        result.then(({ errors }) => {
+          expect(errors).not.to.be.empty;
+          expect(errors[0].message).to.equal(newErrorMessage);
+        });
       });
     });
   });
@@ -353,13 +354,10 @@ describe("Validation", () => {
 
         setTimeout(() => {
           expect(comp.state.errorSchema).eql({
-/*
-            //TODO: Resolve is it correct: with current flow empty errors does not appear in errorSchema
             __errors: [],
             pass1: {
               __errors: [],
             },
-*/
             pass2: {
               __errors: [
                 "does not meet minimum length of 3",
