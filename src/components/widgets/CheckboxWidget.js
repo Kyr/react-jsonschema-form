@@ -1,26 +1,31 @@
-import React, {PropTypes} from "react";
+import React, { PropTypes } from "react";
+import DescriptionField from "../fields/DescriptionField.js";
 
-
-function CheckboxWidget({
-  schema,
-  id,
-  value,
-  required,
-  disabled,
-  label,
-  autofocus,
-  onChange,
-}) {
+function CheckboxWidget(props) {
+  const {
+    schema,
+    id,
+    value,
+    required,
+    disabled,
+    label,
+    autofocus,
+    onChange,
+  } = props;
   return (
     <div className={`checkbox ${disabled ? "disabled" : ""}`}>
+      {schema.description &&
+        <DescriptionField description={schema.description} />}
       <label>
-        <input type="checkbox"
+        <input
+          type="checkbox"
           id={id}
           checked={typeof value === "undefined" ? false : value}
           required={required}
           disabled={disabled}
           autoFocus={autofocus}
-          onChange={(event) => onChange(event.target.checked)}/>
+          onChange={event => onChange(event.target.checked)}
+        />
         <span>{label}</span>
       </label>
     </div>

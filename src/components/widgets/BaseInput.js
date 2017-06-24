@@ -1,5 +1,4 @@
-import React, {PropTypes} from "react";
-
+import React, { PropTypes } from "react";
 
 function BaseInput(props) {
   // Note: since React 15.2.0 we can't forward unknown element attributes, so we
@@ -9,13 +8,13 @@ function BaseInput(props) {
     readonly,
     autofocus,
     onBlur,
-    options,  // eslint-disable-line
-    schema,   // eslint-disable-line
-    formContext,  // eslint-disable-line
-    registry, // eslint-disable-line
+    options,
+    schema,
+    formContext,
+    registry,
     ...inputProps
   } = props;
-  const _onChange = ({target: {value}}) => {
+  const _onChange = ({ target: { value } }) => {
     return props.onChange(value === "" ? undefined : value);
   };
   return (
@@ -26,7 +25,8 @@ function BaseInput(props) {
       autoFocus={autofocus}
       value={value == null ? "" : value}
       onChange={_onChange}
-      onBlur={onBlur && (event => onBlur(inputProps.id, event.target.value))}/>
+      onBlur={onBlur && (event => onBlur(inputProps.id, event.target.value))}
+    />
   );
 }
 
@@ -48,7 +48,7 @@ if (process.env.NODE_ENV !== "production") {
     readonly: PropTypes.bool,
     autofocus: PropTypes.bool,
     onChange: PropTypes.func,
-    onBlur: PropTypes.func
+    onBlur: PropTypes.func,
   };
 }
 
